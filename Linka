@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cache-memory</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- HTML -->
+  <main id="main">
+
+    <svg class="cpu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="60" height="60"><path fill-rule="evenodd" d="M8.75 8a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h6.5a.75.75 0 00.75-.75v-6.5a.75.75 0 00-.75-.75h-6.5zm.75 6.5v-5h5v5h-5z"></path><path fill-rule="evenodd" d="M15.25 1a.75.75 0 01.75.75V4h2.25c.966 0 1.75.784 1.75 1.75V8h2.25a.75.75 0 010 1.5H20v5h2.25a.75.75 0 010 1.5H20v2.25A1.75 1.75 0 0118.25 20H16v2.25a.75.75 0 01-1.5 0V20h-5v2.25a.75.75 0 01-1.5 0V20H5.75A1.75 1.75 0 014 18.25V16H1.75a.75.75 0 010-1.5H4v-5H1.75a.75.75 0 010-1.5H4V5.75C4 4.784 4.784 4 5.75 4H8V1.75a.75.75 0 011.5 0V4h5V1.75a.75.75 0 01.75-.75zm3 17.5a.25.25 0 00.25-.25V5.75a.25.25 0 00-.25-.25H5.75a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h12.5z"></path></svg>
+    <h1 class="title">cache-memory</h1>
+    <p class="subtitle">A cache memory implementation in javascript.</p>
+
+    <section id="form">
+
+      <input id="input" class="input" type="text" placeholder="Write here">
+
+      <section class="button-area">
+        <a href="#" onclick="optionRead()" class="button">Read</a>
+        <a href="#" onclick="optionWrite()" class="button">Write</a>
+        <a href="#" onclick="optionList()" class="button">List</a>
+        <a href="#" onclick="optionExit()" class="button">Exit</a>
+      </section>
+
+    </section>
+
+    <section class="option-result">
+      <p id="option-return"></p>
+    </section>
+
+    <section class="memory-data">
+      <div id="cache">
+        <p>Cache</p>
+      </div>
+      <div id="memory">
+        <p>Memory</p>
+      </div>
+      <div id="hit">
+        <p>Hit</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CSS -->
+  <style>
+    body {
+      background-color: #fafafa;
+      font-family: 'Roboto Mono', monospace;
+      color: #333;
+    }
+    main {
+      margin: 24px auto;
+      max-width: 400px;
+      text-align: center;
+    }
+    .cpu-icon {
+      margin: 0 auto;
+      display: block;
+      fill: #333;
+    }
+    .title {
+      margin: 0 0 14px;
+    }
+    .divider {
+      border: none;
+      border-top: 0.5px solid #ccc;
+    }
+    .subtitle {
+      margin: -8px 0 28px;
+      font-size: 0.8em;
+      font-weight: 300;
+    }
+    #form {
+      padding: 24px;
+      border: 0.5px solid #ccc;
+      border-radius: 10px;
+    }
+    .input {
+      box-sizing: border-box;
+      padding: 8px;
+      width: 100%;
+      border: 0.5px solid #ccc;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.8em;
+      font-weight: 200;
+      transition: 0.5s all;
+    }
+    .input:focus-visible {
+      border: 1px solid #3c73eb;
+      outline: 0;
+    }
+    .button-area {
+      display: flex;
+      justify-content: center;
+    }
+    .button {
+      margin: 8px;
+      padding: 6px 12px;
+      border: 0.5px solid #ccc;
+      border-radius: 5px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 0.8em;
+      font-weight: 200;
+      background-color: #fff;
+      transition: 0.5s all;
+    }
+    .button:hover {
+      cursor: pointer;
+      background-color: #3c73eb;
+      border: 1px solid #ccc;
+      color: #fff;
+    }
+    .option-result {
+      font-size: 0.8em;
+      font-weight: 400;
+    }
+    .memory-data {
+      display: grid;
+      grid-template-columns: 35% 40% 25%;
+      text-align: left;
+      font-size: 0.8em;
+      font-weight: 200;
+    }
+    .finished-message {
+      font-size: 0.9em;
+    }
+  </style>
+
+  <!-- JS -->
+  <script>
+
+    //Declare arrays and variables
+    var cacheVector = new Array(8);
+    var memoryVector = new Array(8);
+    var hitVector = new Array(8);
+    var replacementPolicyCounter = 0;
+    var validationBit = 0;
+    var lines = 8;
+
+    //Cache and memory constructors
+    function cacheConstructor(data) { this.data = data; }
+    function memoryConstructor(data) { this.data = data; }
+    function hitConstructor(data) { this.data = data; }
+
+    //Declare html elements
+    const cache = document.getElementById("cache");
+    const memory = document.getElementById("memory");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const option = document.getElementById("option-return");
+
+    //Function thats generate random number
+    function generateRandomNumber(count) {
+      let generatedCache = "";
+      for (let i = 0; i < count; i++) {
+        generatedCache += Math.round(Math.random()) + "";
+      }
+      return generatedCache;
+    }
+
+    //Function that generates cache, memory and hit data
+    function generateCacheAndMemory() {
+      for (let i = 0; i < lines; i++) {
+
+        let cacheConstructorReturn = new cacheConstructor(generateRandomNumber(4));
+        cacheVector[i] = cacheConstructorReturn.data; 
+        //innerHTML escreve no html em uma área específica - são eles que printam na teela os dados da cache, memória e hit
+        cache.innerHTML += cacheVector[i] + "<br/>";
+
+        let memoryConstructorReturn = new memoryConstructor(generateRandomNumber(8));
+        memoryVector[i] = memoryConstructorReturn.data;
+        memory.innerHTML += memoryVector[i] + "<br/>";
+
+        let hitConstructorReturn = new hitConstructor(generateRandomNumber(1));
+        hitVector[i] = hitConstructorReturn.data;
+        hit.innerHTML += hitVector[i] + "<br/>";
+      }
+    }
+
+    //Option read
+    function optionRead() {
+      let position = input.value;
+      let valueInPosition = memoryVector[position].data;
+      option.innerHTML = "O valor na posição " + position + " é " + valueInPosition + ".";
+    }
+
+    //Option write
+    function optionWrite() {
+      let inputData = input.value;
+      for (let i = 0; i < memoryVector.lenght; i++) {
+        alert(memoryVector[i]);
+        let isInMemory = (inputData == memoryVector[i]) ? "Is in " + memoryVector[i] : "Not is in memory";        
+      }
+    }
+
+    //Option list
+    function optionList() {
+      let readAbsolute = 0;
+      let readPercentual = 0;
+      let writeAbsolute = 0;
+      let writePercentual = 0;
+      let hitAbsolute = 0;
+      let hitPercentual = 0;
+
+      option.innerHTML = 
+      "Os resultados finais são: " + 
+      "<br/><br/>" + 
+      " Read abs.: " + readAbsolute + 
+      " Read per.: " + readPercentual +
+      " Write abs.: " + writeAbsolute + 
+      "<br/>" + 
+      " Write per.: " + writePercentual +
+      " Hit abs.: " + hitAbsolute + 
+      " Hit per.: " + hitPercentual;
+    }
+
+    //Option exit
+    function optionExit() {
+      let finishedMessage = "<p class='finished-message'>Finished.</p>";
+      form.innerHTML = finishedMessage;
+    }
+
+    //Start algorithm
+    generateCacheAndMemory();
+    
+  </script>
+  
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cache-memory</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- HTML -->
+  <main id="main">
+
+    <svg class="cpu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="60" height="60"><path fill-rule="evenodd" d="M8.75 8a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h6.5a.75.75 0 00.75-.75v-6.5a.75.75 0 00-.75-.75h-6.5zm.75 6.5v-5h5v5h-5z"></path><path fill-rule="evenodd" d="M15.25 1a.75.75 0 01.75.75V4h2.25c.966 0 1.75.784 1.75 1.75V8h2.25a.75.75 0 010 1.5H20v5h2.25a.75.75 0 010 1.5H20v2.25A1.75 1.75 0 0118.25 20H16v2.25a.75.75 0 01-1.5 0V20h-5v2.25a.75.75 0 01-1.5 0V20H5.75A1.75 1.75 0 014 18.25V16H1.75a.75.75 0 010-1.5H4v-5H1.75a.75.75 0 010-1.5H4V5.75C4 4.784 4.784 4 5.75 4H8V1.75a.75.75 0 011.5 0V4h5V1.75a.75.75 0 01.75-.75zm3 17.5a.25.25 0 00.25-.25V5.75a.25.25 0 00-.25-.25H5.75a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h12.5z"></path></svg>
+    <h1 class="title">cache-memory</h1>
+    <p class="subtitle">A cache memory implementation in javascript.</p>
+
+    <section id="form">
+
+      <input id="input" class="input" type="text" placeholder="Write here">
+
+      <section class="button-area">
+        <a href="#" onclick="optionRead()" class="button">Read</a>
+        <a href="#" onclick="optionWrite()" class="button">Write</a>
+        <a href="#" onclick="optionList()" class="button">List</a>
+        <a href="#" onclick="optionExit()" class="button">Exit</a>
+      </section>
+
+    </section>
+
+    <section class="option-result">
+      <p id="option-return"></p>
+    </section>
+
+    <section class="memory-data">
+      <div id="cache">
+        <p>Cache</p>
+      </div>
+      <div id="memory">
+        <p>Memory</p>
+      </div>
+      <div id="hit">
+        <p>Hit</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CSS -->
+  <style>
+    body {
+      background-color: #fafafa;
+      font-family: 'Roboto Mono', monospace;
+      color: #333;
+    }
+    main {
+      margin: 24px auto;
+      max-width: 400px;
+      text-align: center;
+    }
+    .cpu-icon {
+      margin: 0 auto;
+      display: block;
+      fill: #333;
+    }
+    .title {
+      margin: 0 0 14px;
+    }
+    .divider {
+      border: none;
+      border-top: 0.5px solid #ccc;
+    }
+    .subtitle {
+      margin: -8px 0 28px;
+      font-size: 0.8em;
+      font-weight: 300;
+    }
+    #form {
+      padding: 24px;
+      border: 0.5px solid #ccc;
+      border-radius: 10px;
+    }
+    .input {
+      box-sizing: border-box;
+      padding: 8px;
+      width: 100%;
+      border: 0.5px solid #ccc;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.8em;
+      font-weight: 200;
+      transition: 0.5s all;
+    }
+    .input:focus-visible {
+      border: 1px solid #3c73eb;
+      outline: 0;
+    }
+    .button-area {
+      display: flex;
+      justify-content: center;
+    }
+    .button {
+      margin: 8px;
+      padding: 6px 12px;
+      border: 0.5px solid #ccc;
+      border-radius: 5px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 0.8em;
+      font-weight: 200;
+      background-color: #fff;
+      transition: 0.5s all;
+    }
+    .button:hover {
+      cursor: pointer;
+      background-color: #3c73eb;
+      border: 1px solid #ccc;
+      color: #fff;
+    }
+    .option-result {
+      font-size: 0.8em;
+      font-weight: 400;
+    }
+    .memory-data {
+      display: grid;
+      grid-template-columns: 35% 40% 25%;
+      text-align: left;
+      font-size: 0.8em;
+      font-weight: 200;
+    }
+    .finished-message {
+      font-size: 0.9em;
+    }
+  </style>
+
+  <!-- JS -->
+  <script>
+
+    //Declarando Matrizes e variáveis
+    var cacheVector = new Array(8);
+    var memoryVector = new Array(8);
+    var hitVector = new Array(8);
+    var replacementPolicyCounter = 0;
+    var validationBit = 0;
+    var lines = 8;
+    
+    // Construtores de cache e memória
+    function cacheConstructor(data) { this.data = data; }
+    function memoryConstructor(data) { this.data = data; }
+    function hitConstructor(data) { this.data = data; }
+
+    //Declarando elementos html
+    //var teste = document.getElementById('bbb');
+    //está recuperando na variável teste a segunda div bbb do HTML.
+    const cache = document.getElementById("cache");
+    const memory = document.getElementById("memory");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const option = document.getElementById("option-return");
+
+    //Função que gera um número aleatório - Num primeiro momento, a gente precisa de dados falsos na cache e na memoria principal para manipular
+    function generateRandomNumber(count) {
+      let generatedCache = "";
+      for (let i = 0; i < count; i++) {
+          //Math.round - retorna um num aleatório de 0 a 1, pois a memoria cache e principal só trabalham com 0 e 1
+        generatedCache += Math.round(Math.random()) + "";
+      }
+      return generatedCache;
+    }
+
+    //Função que gera cache, memória e dados de hit
+    function generateCacheAndMemory() {
+      for (let i = 0; i < lines; i++) {
+          //Gera 4 números aleatórios entre 0 e 1. Ex: 0011  
+        let cacheConstructorReturn = new cacheConstructor(generateRandomNumber(4));
+        cacheVector[i] = cacheConstructorReturn.data;
+        cache.innerHTML += cacheVector[i] + "<br/>";
+
+        let memoryConstructorReturn = new memoryConstructor(generateRandomNumber(8));
+        memoryVector[i] = memoryConstructorReturn.data;
+        memory.innerHTML += memoryVector[i] + "<br/>";
+
+        let hitConstructorReturn = new hitConstructor(generateRandomNumber(1));
+        hitVector[i] = hitConstructorReturn.data;
+        hit.innerHTML += hitVector[i] + "<br/>";
+      }
+    }
+
+    //Opção lida
+    function optionRead() {
+        //Lê o valor
+      let position = input.value;
+      let valueInPosition = memoryVector[position].data;
+      option.innerHTML = "O valor na posição " + position + " é " + valueInPosition + ".";
+    }
+
+    //Opção escrita
+    function optionWrite() {
+      let inputData = input.value;
+      for (let i = 0; i < memoryVector.lenght; i++) {
+        alert(memoryVector[i]);
+        let isInMemory = (inputData == memoryVector[i]) ? "Is in " + memoryVector[i] : "Not is in memory";        
+      }
+    }
+
+    //Opção Listada
+    function optionList() {
+      let readAbsolute = 0;
+      let readPercentual = 0;
+      let writeAbsolute = 0;
+      let writePercentual = 0;
+      let hitAbsolute = 0;
+      let hitPercentual = 0;
+
+      option.innerHTML = 
+      "Os resultados finais são: " + 
+      "<br/><br/>" + 
+      " Read abs.: " + readAbsolute + 
+      " Read per.: " + readPercentual +
+      " Write abs.: " + writeAbsolute + 
+      "<br/>" + 
+      " Write per.: " + writePercentual +
+      " Hit abs.: " + hitAbsolute + 
+      " Hit per.: " + hitPercentual;
+    }
+
+    //Opção saída
+    function optionExit() {
+      let finishedMessage = "<p class='finished-message'>Finished.</p>";
+      form.innerHTML = finishedMessage;
+    }
+
+    //Iniciação do algoritmo
+    generateCacheAndMemory();
+    
+  </script>
+  
+</body>
+</html>
